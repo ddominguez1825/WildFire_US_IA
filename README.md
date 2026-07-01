@@ -1,2 +1,2 @@
 # WildFire_US_IA
-Predicción de incendios forestales mediante datos de
+Predicción de incendios forestales mediante datos compartidos en kaggel.
