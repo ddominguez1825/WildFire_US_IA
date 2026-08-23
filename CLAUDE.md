@@ -46,8 +46,7 @@ disparan exponencialmente el riesgo de incendios de gran magnitud.
 
  Métodos, materiales y tecnologías de uso potencial
 • Lenguaje de programación: Python 3.x.
-• Entorno de desarrollo: Jupyter Notebooks / Google Colab (aprovechando 
-recursos en la nube).
+• Entorno de desarrollo: Jupyter Notebooks 
 • Librerías principales:
 • Manipulación de datos: Pandas y NumPy.
 • Visualización: Matplotlib y Seaborn.
@@ -64,11 +63,124 @@ Two independent datasets, each with its own EDA notebook and no shared code betw
   discovery/containment dates, and pre-fire weather windows at -30/-15/-7 days and at containment
   (`Temp_*`, `Wind_*`, `Hum_*`, `Prec_*`). **Missing weather values are encoded as `-1`, not NaN or null** —
   any analysis or dashboard code touching these columns must treat `-1` as missing.
-- **`DataBase/FPA_FOD_20170508.sqlite`** — the raw FPA-FOD wildfire spatial database (`Fires` table plus
-  SpatiaLite geometry tables). This file is **git-ignored** (too large to commit) and must exist locally
-  for the `EDA_FpaFod20170508.ipynb` notebook to run.
-- `DataSets/Wildfire_Weather_Merged_new.csv`, `DataSets/acres.csv`, `DataSets/fire-occurence.csv`,
-  `DataSets/fires.csv` — supplementary/intermediate CSVs referenced by exploratory work.
+
+Las columnas del fichero CSV han sido renombradas: 
+'Unnamed': '0.1', 
+'Unnamed': '0',
+'fire_name': 'Name of Fire',
+'fire_size': 'Size of Fire',
+'fire_size_class': 'Class of Fire Size (A-G)', 
+'stat_cause_descr': 'Cause of Fire', 
+'latitude': 'Latitude of Fire', 
+'longitude': 'Longitude of Fire', 
+'state': 'State of Fire',
+'disc_clean_date': 'Discovery Date', 
+'cont_clean_date': 'Containment Date', 
+'discovery_month': 'Month of Discovery',
+'disc_date_final': 'Final Discovery Date', 
+'cont_date_final': 'Final Containment Date', 
+'putout_time': 'Time to Put Out Fire', 
+'disc_date_pre': 'Preliminary Discovery Date',
+'disc_pre_year': 'Year of Preliminary Discovery', 
+'disc_pre_month': 'Month of Preliminary Discovery', 
+'wstation_usaf': 'Weather Station USAF', 'dstation_m': 'Distance to Station M',
+'wstation_wban': 'Weather Station WBAN', 
+'wstation_byear': 'Weather Station Begin Year', 
+'wstation_eyear': 'Weather Station End Year',
+'Vegetation': 'Dominant Vegetation',
+'fire_mag': 'Magnitude of Fire',
+'weather_file': 'Weather File', 
+'Temp_pre_30': 'Temperature 30 Days Prior', 
+'Temp_pre_15': 'Temperature 15 Days Prior', 
+'Temp_pre_7': 'Temperature 7 Days Prior',
+'Temp_cont': 'Temperature on Containment Day', 
+'Wind_pre_30': 'Wind 30 Days Prior', 
+'Wind_pre_15': 'Wind 15 Days Prior',
+'Wind_pre_7': 'Wind 7 Days Prior', 
+'Wind_cont': 'Wind on Containment Day',
+'Hum_pre_30': 'Humidity 30 Days Prior',
+'Hum_pre_15': 'Humidity 15 Days Prior', 
+'Hum_pre_7': 'Humidity 7 Days Prior', 
+'Hum_cont': 'Humidity on Containment Day', 
+'Prec_pre_30': 'Precipitation 30 Days Prior',
+'Prec_pre_15': 'Precipitation 15 Days Prior', 
+'Prec_pre_7': 'Precipitation 7 Days Prior', 
+'Prec_cont': 'Precipitation on Containment Day', 
+'remoteness': 'Remoteness'
+
+Los tipos de datos de cada columna:
+Unnamed: 0.1                          int64
+Unnamed: 0                            int64
+Name of Fire                         object
+Size of Fire                        float64
+Class of Fire Size (A-G)             object
+Cause of Fire                        object
+Latitude of Fire                    float64
+Longitude of Fire                   float64
+State of Fire                        object
+Discovery Date                       object
+Containment Date                     object
+Month of Discovery                   object
+Final Discovery Date                 object
+Final Containment Date               object
+Time to Put Out Fire                 object
+Preliminary Discovery Date           object
+Year of Preliminary Discovery         int64
+Month of Preliminary Discovery       object
+Weather Station USAF                 object
+Distance to Station M               float64
+Weather Station WBAN                  int64
+Weather Station Begin Year            int64
+Weather Station End Year              int64
+Dominant Vegetation                   int64
+Magnitude of Fire                   float64
+Weather File                         object
+Temperature 30 Days Prior           float64
+Temperature 15 Days Prior           float64
+Temperature 7 Days Prior            float64
+Temperature on Containment Day      float64
+Wind 30 Days Prior                  float64
+Wind 15 Days Prior                  float64
+Wind 7 Days Prior                   float64
+Wind on Containment Day             float64
+Humidity 30 Days Prior              float64
+Humidity 15 Days Prior              float64
+Humidity 7 Days Prior               float64
+Humidity on Containment Day         float64
+Precipitation 30 Days Prior         float64
+Precipitation 15 Days Prior         float64
+Precipitation 7 Days Prior          float64
+Precipitation on Containment Day    float64
+Remoteness                          float64
+dtype: object
+
+## Common mistakes to avoid
+Errores y dificultades temporales y espaciales: 
+  1. Ignorar el retraso en la notificación: confundir la fecha de descubrimiento (DISCOVERY_DATE) o la fecha de contención con la hora exacta de ignición distorsiona las correlaciones predictivas con el clima. 
+  2. Confundir atributos nominales y espaciales: atributos como ESTADO (STATE) y CONDADO (COUNTY) en las tablas de informes federales suelen ser campos de texto ingresados ​​manualmente —y no derivados de superposiciones espaciales—, lo que introduce errores tipográficos o discrepancias con la LATITUD y LONGITUD. 
+  3. Malinterpretar incendios de tamaño cero: tratar los incendios con cero acres quemados o datos faltantes en este campo (FIRE_SIZE) como ruido algorítmico, en lugar de como intervenciones de contención rápida o quemas prescritas, distorsiona las métricas de gravedad. 
+
+Errores de modelado y manejo de datos: 
+  1. Ignorar una asimetría extrema: no aplicar transformaciones logarítmicas o escalado robusto a variables objetivo (como el área quemada) provoca que los valores atípicos extremos dominen los modelos basados ​​en gradientes. 
+  2. División aleatoria para entrenamiento y prueba: utilizar divisiones aleatorias en datos de series temporales de incendios forestales provoca una fuga de datos, ya que eventos futuros filtran patrones temporales en los conjuntos de entrenamiento; se debe utilizar siempre validación cruzada basada en el tiempo o agrupada. 
+  3. Pasar por alto la ausencia de agencias informantes: tratar la falta de datos en el campo de agencia informante (NWCG_REPORTING_AGENCY) como algo aleatorio en lugar de sistémico (por ejemplo, diferencias de seguimiento entre agencias locales y federales) introduce un sesgo oculto de selección de muestra. 
+
+Preparación del modelo y limitaciones —
+ 1. Valores faltantes: porcentaje de valores nulos en las fechas de contención o en las tablas de atributos complementarios. 
+ 2. Desequilibrio de clases: variables objetivo sesgadas (p. ej., incendios de gran magnitud frente a la contención típica de incendios pequeños). 
+ 3. Errores comunes: sobreajuste a agrupaciones geográficas de alta densidad o ignorar los sesgos de la agencia informante.
+
+## Structured output format
+
+Análisis Exploratorio de Datos (EDA):
+ 1. Tendencias temporales (gráficos de frecuencia interanual y distribución de la estacionalidad).
+ 2. Distribución del tamaño: histograma de FIRE_SIZE con escala logarítmica debido a la fuerte asimetría hacia los incendios de menor tamaño. 
+ 3. Análisis de causas: desglose de incidentes según su origen (causados ​​por humanos frente a causados ​​por rayos).
+
+
+## References to your other .md files
+
+
 
 ## Repository structure
 
